@@ -1,0 +1,17 @@
+---
+description: Testing standards for test files
+globs: tests/**,**/*.test.*,**/*.spec.*
+alwaysApply: false
+---
+
+# Testing
+
+- Write tests that verify behavior, not implementation details.
+- Each test should have one clear assertion. Name it after what it proves.
+- Use `describe` blocks to group related tests. Use `it` or `test` for individual cases.
+- Test the public API of modules, not internal functions.
+- Prefer real dependencies over mocks. Only mock external services (APIs, databases).
+- Every bug fix must include a regression test that fails without the fix.
+- Use Vitest with jsdom and React Testing Library for component tests.
+- Put component tests in `tests/components/`; place app integration and utility tests in `tests/`.
+- Run the full test suite with `npm test`, as well as `npm run lint` and `npm run build`, before marking a task complete.

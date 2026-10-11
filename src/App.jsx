@@ -1,48 +1,47 @@
-import { useEffect, useRef, useState } from 'react'
-import abcjs from 'abcjs'
+import { useState } from 'react'
+import TuneAudio from './components/TuneAudio.jsx'
+import TuneBookList from './components/TuneBookList.jsx'
+import TuneInput from './components/TuneInput.jsx'
+import TuneViewer from './components/TuneViewer.jsx'
+import {
+  INITIAL_ACTIVE_TUNE_ID,
+  INITIAL_TUNE_BOOK,
+} from './initialTuneBook.js'
+import { readAbcHeader } from './readAbcHeader.js'
 import './App.css'
 
-const DEFAULT_ABC = `X:1
-T:Twinkle, Twinkle, Little Star
-M:4/4
-L:1/4
-K:C
-C C G G | A A G2 | F F E E | D D C2 |
-G G F F | E E D2 | G G F F | E E D2 |
-C C G G | A A G2 | F F E E | D D C2 |]`
-
 function App() {
-  const [abcInput, setAbcInput] = useState(DEFAULT_ABC)
-  const paperRef = useRef(null)
-  const renderErrorRef = useRef(null)
+  const [tuneBook, setTuneBook] = useState(INITIAL_TUNE_BOOK)
+  const [activeTuneId, setActiveTuneId] = useState(INITIAL_ACTIVE_TUNE_ID)
 
-  useEffect(() => {
-    const paper = paperRef.current
-    if (!paper) return
+  const activeTune =
+    tuneBook.find((tune) => tune.id === activeTuneId) ?? tuneBook[0]
+  const abcString = activeTune?.abcString ?? ''
 
-    paper.replaceChildren()
-    renderErrorRef.current.hidden = true
-    renderErrorRef.current.textContent = ''
+  function updateActiveAbc(nextAbcString) {
+    if (!activeTune) return
 
-    if (!abcInput.trim()) return
+    setTuneBook((tunes) =>
+      tunes.map((tune) => {
+        if (tune.id !== activeTune.id) return tune
 
-    try {
-      abcjs.renderAbc(paper, abcInput, { responsive: 'resize' })
-    } catch (error) {
-      renderErrorRef.current.textContent = `Could not render the score: ${
-        error instanceof Error
-          ? error.message
-          : 'Could not render this ABC notation.'
-      }`
-      renderErrorRef.current.hidden = false
-    }
-  }, [abcInput])
+        return {
+          ...tune,
+          abcString: nextAbcString,
+          title: readAbcHeader(nextAbcString, 'T') || tune.title,
+          type: readAbcHeader(nextAbcString, 'R') || tune.type,
+        }
+      }),
+    )
+  }
 
   return (
     <main className="app-shell">
       <header className="app-header no-print">
         <a className="brand" href="#" aria-label="Score Studio home">
-          <span className="brand-mark" aria-hidden="true">♪</span>
+          <span className="brand-mark" aria-hidden="true">
+            ♪
+          </span>
           <span>Score Studio</span>
         </a>
         <span className="header-note">ABC notation, made visual</span>
@@ -57,76 +56,22 @@ function App() {
           </p>
         </div>
 
+        <TuneBookList
+          tunes={tuneBook}
+          activeTuneId={activeTune?.id}
+          onSelectTune={setActiveTuneId}
+        />
+
         <div className="work-area">
-          <section className="editor-panel no-print" aria-labelledby="editor-title">
-            <div className="panel-heading">
-              <div>
-                <p className="eyebrow">YOUR SCORE</p>
-                <h2 id="editor-title">ABC notation</h2>
-              </div>
-              <span className="live-indicator"><span /> Live</span>
-            </div>
-
-            <label className="sr-only" htmlFor="abc-input">
-              Enter ABC music notation
-            </label>
-            <textarea
-              id="abc-input"
-              className="notation-input"
-              value={abcInput}
-              onChange={(event) => setAbcInput(event.target.value)}
-              spellCheck="false"
-              autoCapitalize="off"
-              aria-describedby="render-error"
+          <div className="editor-column">
+            <TuneInput
+              abcString={abcString}
+              onAbcChange={updateActiveAbc}
+              onClear={() => updateActiveAbc('')}
             />
-            <p
-              className="render-error"
-              id="render-error"
-              role="alert"
-              ref={renderErrorRef}
-              hidden
-            />
-            <div className="editor-footer">
-              <span>{abcInput.length} characters</span>
-              <button
-                className="clear-button"
-                type="button"
-                onClick={() => setAbcInput('')}
-                disabled={!abcInput}
-              >
-                Clear
-              </button>
-            </div>
-            <button
-              className="print-button"
-              type="button"
-              onClick={() => window.print()}
-            >
-              <span aria-hidden="true">↗</span>
-              Print or save as PDF
-            </button>
-          </section>
-
-          <section className="preview-panel" aria-labelledby="preview-title">
-            <div className="panel-heading preview-heading no-print">
-              <div>
-                <p className="eyebrow">INSTANT PREVIEW</p>
-                <h2 id="preview-title">Sheet music</h2>
-              </div>
-              <span className="preview-badge">Score</span>
-            </div>
-            <div className="paper">
-              {abcInput.trim() ? (
-                <div className="score" ref={paperRef} />
-              ) : (
-                <div className="empty-score">
-                  <span aria-hidden="true">♫</span>
-                  <p>Your sheet music will appear here.</p>
-                  <span>Enter some ABC notation to get started.</span>
-                </div>
-              )}
-            </div>
-          </section>
+            <TuneAudio />
+          </div>
+          <TuneViewer abcString={abcString} />
         </div>
 
         <footer className="workspace-footer no-print">

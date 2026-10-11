@@ -12,6 +12,8 @@ abc-music-app — A React and Vite app for writing ABC music notation, previewin
 - `src/App.css` — App layout, component styles, responsive and print styles
 - `src/index.css` — Global styles and design defaults
 - `src/main.jsx` — React entry point
+- `src/components/` — Reusable React UI components
+- `tests/` — Vitest component, integration, and utility tests
 - `public/` — Static assets
 - `vite.config.js` — Vite configuration
 
@@ -19,14 +21,16 @@ abc-music-app — A React and Vite app for writing ABC music notation, previewin
 - Dev server: `npm run dev`
 - Production build: `npm run build`
 - Lint: `npm run lint`
+- Unit tests: `npm test`
 - Preview production build: `npm run preview`
 
 ## Verification
 After changes, run:
 1. `npm run lint`
 2. `npm run build`
+3. `npm test`
 
-There is no test or TypeScript check script configured currently.
+Tests use Vitest with a jsdom environment and React Testing Library. Component tests are in `tests/components/`, with app integration and utility tests in `tests/`.
 
 ## Conventions
 - Use React function components and hooks; keep components in JSX unless the project is deliberately migrated to TypeScript.

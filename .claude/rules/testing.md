@@ -14,12 +14,13 @@ paths:
 - Test the public API of modules, not internal functions.
 - Prefer real dependencies over mocks. Only mock external services (APIs, databases).
 - Every bug fix must include a regression test that fails without the fix.
-- Run the full test suite before marking any task complete: `[your test command]`
+- Use Vitest with jsdom and React Testing Library for component tests.
+- Put component tests in `tests/components/`; place app integration and utility tests in `tests/`.
+- Run the full test suite before marking any task complete: `npm test`.
+- Also run `npm run lint` and `npm run build` to verify application changes.
 
 <!--
 CUSTOMIZATION NOTES (this comment is stripped from context, it's for you):
-
-Replace [your test command] with your actual command (e.g., pytest, npm test, go test ./...).
 
 Adjust the paths globs to match your project structure:
 - Python: tests/**, **/*_test.py
