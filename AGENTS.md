@@ -19,18 +19,26 @@ abc-music-app — A React and Vite app for writing ABC music notation, previewin
 
 ## Commands
 - Dev server: `npm run dev`
+- Dev server with lint and production-build watchers: `npm run dev:watch`
 - Production build: `npm run build`
 - Lint: `npm run lint`
+- Format source and tests: `npm run format`
 - Unit tests: `npm test`
 - Preview production build: `npm run preview`
 
+`npm run dev:watch` starts the Vite development server, rebuilds the production
+bundle when files change, and reruns ESLint when source, test, or configuration
+files change.
+
 ## Verification
 After changes, run:
-1. `npm run lint`
-2. `npm run build`
-3. `npm test`
+1. `npm run format`
+2. `npm run lint`
+3. `npm run build`
+4. `npm test`
 
 Tests use Vitest with a jsdom environment and React Testing Library. Component tests are in `tests/components/`, with app integration tests in `tests/` and test setup in `tests/setup.js`.
+Prettier formats JavaScript, JSX, CSS, and the package manifest through `npm run format`.
 
 ## Conventions
 - Use React function components and hooks; keep components in JSX unless the project is deliberately migrated to TypeScript.

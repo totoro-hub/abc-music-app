@@ -1,38 +1,38 @@
-import { useState } from 'react'
-import TuneAudio from './components/TuneAudio.jsx'
-import TuneBookList from './components/TuneBookList.jsx'
-import TuneInput from './components/TuneInput.jsx'
-import TuneViewer from './components/TuneViewer.jsx'
+import { useState } from "react";
+import TuneAudio from "./components/TuneAudio.jsx";
+import TuneBookList from "./components/TuneBookList.jsx";
+import TuneInput from "./components/TuneInput.jsx";
+import TuneViewer from "./components/TuneViewer.jsx";
 import {
   INITIAL_ACTIVE_TUNE_ID,
   INITIAL_TUNE_BOOK,
-} from './initialTuneBook.js'
-import { readAbcHeader } from './readAbcHeader.js'
-import './App.css'
+} from "./data/initialTuneBook.js";
+import { readAbcHeader } from "./readAbcHeader.js";
+import "./App.css";
 
 function App() {
-  const [tuneBook, setTuneBook] = useState(INITIAL_TUNE_BOOK)
-  const [activeTuneId, setActiveTuneId] = useState(INITIAL_ACTIVE_TUNE_ID)
+  const [tuneBook, setTuneBook] = useState(INITIAL_TUNE_BOOK);
+  const [activeTuneId, setActiveTuneId] = useState(INITIAL_ACTIVE_TUNE_ID);
 
   const activeTune =
-    tuneBook.find((tune) => tune.id === activeTuneId) ?? tuneBook[0]
-  const abcString = activeTune?.abcString ?? ''
+    tuneBook.find((tune) => tune.id === activeTuneId) ?? tuneBook[0];
+  const abcString = activeTune?.abcString ?? "";
 
   function updateActiveAbc(nextAbcString) {
-    if (!activeTune) return
+    if (!activeTune) return;
 
     setTuneBook((tunes) =>
       tunes.map((tune) => {
-        if (tune.id !== activeTune.id) return tune
+        if (tune.id !== activeTune.id) return tune;
 
         return {
           ...tune,
           abcString: nextAbcString,
-          title: readAbcHeader(nextAbcString, 'T') || tune.title,
-          type: readAbcHeader(nextAbcString, 'R') || tune.type,
-        }
+          title: readAbcHeader(nextAbcString, "T") || tune.title,
+          type: readAbcHeader(nextAbcString, "R") || tune.type,
+        };
       }),
-    )
+    );
   }
 
   return (
@@ -67,7 +67,7 @@ function App() {
             <TuneInput
               abcString={abcString}
               onAbcChange={updateActiveAbc}
-              onClear={() => updateActiveAbc('')}
+              onClear={() => updateActiveAbc("")}
             />
             <TuneAudio />
           </div>
@@ -80,7 +80,7 @@ function App() {
         </footer>
       </section>
     </main>
-  )
+  );
 }
 
-export default App
+export default App;

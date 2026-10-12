@@ -1,29 +1,29 @@
-import { useState } from 'react'
-import { saveScoreAsPdf } from '../saveScoreAsPdf.js'
+import { useState } from "react";
+import { saveScoreAsPdf } from "../saveScoreAsPdf.js";
 
 function TuneInput({ abcString, onAbcChange, onClear }) {
-  const [exportError, setExportError] = useState('')
-  const [isExporting, setIsExporting] = useState(false)
+  const [exportError, setExportError] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
 
   async function handleSavePdf() {
-    setExportError('')
-    setIsExporting(true)
+    setExportError("");
+    setIsExporting(true);
 
     try {
-      const scoreSvg = document.querySelector('.score svg')
+      const scoreSvg = document.querySelector(".score svg");
       if (!scoreSvg) {
-        throw new Error('The sheet music is not ready to export.')
+        throw new Error("The sheet music is not ready to export.");
       }
 
-      await saveScoreAsPdf(scoreSvg, abcString)
+      await saveScoreAsPdf(scoreSvg, abcString);
     } catch (error) {
       setExportError(
         `Could not save the PDF: ${
-          error instanceof Error ? error.message : 'Please try again.'
+          error instanceof Error ? error.message : "Please try again."
         }`,
-      )
+      );
     } finally {
-      setIsExporting(false)
+      setIsExporting(false);
     }
   }
 
@@ -68,7 +68,7 @@ function TuneInput({ abcString, onAbcChange, onClear }) {
         disabled={!abcString.trim() || isExporting}
       >
         <span aria-hidden="true">↓</span>
-        {isExporting ? 'Creating PDF…' : 'Save as PDF'}
+        {isExporting ? "Creating PDF…" : "Save as PDF"}
       </button>
       {exportError && (
         <p className="render-error" role="alert">
@@ -76,7 +76,7 @@ function TuneInput({ abcString, onAbcChange, onClear }) {
         </p>
       )}
     </section>
-  )
+  );
 }
 
-export default TuneInput
+export default TuneInput;

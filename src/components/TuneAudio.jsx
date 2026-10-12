@@ -7,11 +7,9 @@ function TuneAudio() {
           <h2 id="audio-title">Tune audio</h2>
         </div>
       </div>
-      <p className="placeholder-copy">
-        The playback engine will live here.
-      </p>
+      <p className="placeholder-copy">The playback engine will live here.</p>
     </section>
-  )
+  );
 }
 
-export default TuneAudio
+export default TuneAudio;

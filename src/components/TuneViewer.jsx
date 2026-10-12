@@ -1,33 +1,39 @@
-import { useEffect, useRef } from 'react'
-import abcjs from 'abcjs'
+import { useEffect, useRef } from "react";
+import abcjs from "abcjs";
+import { compactGraceNoteSpacing } from "../utils/compactGraceNoteSpacing.js";
 
 function TuneViewer({ abcString }) {
-  const paperRef = useRef(null)
-  const renderErrorRef = useRef(null)
-  const hasScore = Boolean(abcString.trim())
+  const paperRef = useRef(null);
+  const renderErrorRef = useRef(null);
+  const hasScore = Boolean(abcString.trim());
 
   useEffect(() => {
-    const paper = paperRef.current
-    const renderError = renderErrorRef.current
-    if (!paper || !renderError) return
+    const paper = paperRef.current;
+    const renderError = renderErrorRef.current;
+    if (!paper || !renderError) return;
 
-    paper.replaceChildren()
-    renderError.hidden = true
-    renderError.textContent = ''
+    paper.replaceChildren();
+    renderError.hidden = true;
+    renderError.textContent = "";
 
-    if (!abcString.trim()) return
+    if (!abcString.trim()) return;
 
     try {
-      abcjs.renderAbc(paper, abcString, { responsive: 'resize' })
+      abcjs.renderAbc(paper, abcString, {
+        responsive: "resize",
+        add_classes: true,
+      });
+      const scoreSvg = paper.querySelector("svg");
+      if (scoreSvg) compactGraceNoteSpacing(scoreSvg);
     } catch (error) {
       renderError.textContent = `Could not render the score: ${
         error instanceof Error
           ? error.message
-          : 'Could not render this ABC notation.'
-      }`
-      renderError.hidden = false
+          : "Could not render this ABC notation."
+      }`;
+      renderError.hidden = false;
     }
-  }, [abcString])
+  }, [abcString]);
 
   return (
     <section className="preview-panel" aria-labelledby="preview-title">
@@ -46,11 +52,7 @@ function TuneViewer({ abcString }) {
             <span>Enter some ABC notation to get started.</span>
           </div>
         )}
-        <div
-          className="score"
-          ref={paperRef}
-          hidden={!hasScore}
-        />
+        <div className="score" ref={paperRef} hidden={!hasScore} />
         <p
           className="render-error"
           id="render-error"
@@ -60,7 +62,7 @@ function TuneViewer({ abcString }) {
         />
       </div>
     </section>
-  )
+  );
 }
 
-export default TuneViewer
+export default TuneViewer;
