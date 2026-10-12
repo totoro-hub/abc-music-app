@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import TuneAudio from "../../src/components/TuneAudio.jsx";
+import TuneAudio from "../../src/components/TuneAudio.js";
 
 describe("TuneAudio", () => {
   it("shows the playback placeholder", () => {

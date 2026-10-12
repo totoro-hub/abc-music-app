@@ -4,8 +4,11 @@ import { defineConfig } from "vitest/config";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  build: {
+    chunkSizeWarningLimit: 520,
+  },
   test: {
     environment: "jsdom",
-    setupFiles: "./tests/setup.js",
+    setupFiles: "./tests/setup.ts",
   },
 });

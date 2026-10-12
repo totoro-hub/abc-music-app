@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import App from "../src/App.jsx";
+import App from "../src/App.js";
 
 vi.mock("abcjs", () => ({
   default: {
@@ -17,7 +17,9 @@ describe("App", () => {
     );
 
     expect(
-      screen.getByRole("textbox", { name: "Enter ABC music notation" }).value,
+      screen.getByRole<HTMLTextAreaElement>("textbox", {
+        name: "Enter ABC music notation",
+      }).value,
     ).toContain("T:The Blarney Pilgrim");
   });
 });

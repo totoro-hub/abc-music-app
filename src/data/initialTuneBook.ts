@@ -1,14 +1,20 @@
-export const INITIAL_ACTIVE_TUNE_ID = "tune-0";
+export const INITIAL_ACTIVE_TUNE_ID: string = "tune-0";
 
-export const INITIAL_TUNE_BOOK = [
+export interface Tune {
+  id: string;
+  title: string;
+  type: string;
+  abcString: string;
+}
+
+export const INITIAL_TUNE_BOOK: Tune[] = [
   {
     id: "tune-0",
     title: "Scotland the Brave",
     type: "March",
     abcString: `X:1
 T:Scotland the Brave
-R: GoneAway
-R: march
+R: March
 M: 4/4
 K: Dmajor
 %%graceslurs 0

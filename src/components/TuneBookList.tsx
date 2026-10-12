@@ -1,4 +1,17 @@
-function TuneBookList({ tunes, activeTuneId, onSelectTune }) {
+import type { ReactElement } from "react";
+import type { Tune } from "../data/initialTuneBook.js";
+
+interface TuneBookListProps {
+  tunes: Pick<Tune, "id" | "title" | "type">[];
+  activeTuneId: string | undefined;
+  onSelectTune: (tuneId: string) => void;
+}
+
+function TuneBookList({
+  tunes,
+  activeTuneId,
+  onSelectTune,
+}: TuneBookListProps): ReactElement {
   return (
     <nav className="tunebook no-print" aria-labelledby="tunebook-title">
       <div className="panel-heading">

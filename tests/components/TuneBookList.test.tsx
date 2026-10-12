@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import TuneBookList from "../../src/components/TuneBookList.jsx";
+import TuneBookList from "../../src/components/TuneBookList.js";
 
 const tunes = [
   { id: "first", title: "First Tune", type: "Reel" },

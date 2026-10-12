@@ -1,4 +1,4 @@
-function getFileName(abcString) {
+function getFileName(abcString: string): string {
   const title = abcString.match(/^T:(.*)$/m)?.[1]?.trim() || "sheet-music";
   const fileName = title
     .replace(/[<>:"/\\|?*]/g, "")
@@ -9,7 +9,10 @@ function getFileName(abcString) {
   return `${fileName || "sheet-music"}.pdf`;
 }
 
-export async function saveScoreAsPdf(scoreSvg, abcString) {
+export async function saveScoreAsPdf(
+  scoreSvg: SVGSVGElement,
+  abcString: string,
+): Promise<void> {
   const { jsPDF } = await import("jspdf");
   await import("svg2pdf.js");
 

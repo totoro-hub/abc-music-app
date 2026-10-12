@@ -3,7 +3,7 @@ const COMPACT_GRACE_NOTE_SPACING = 5.5;
 const STEM_X_OFFSET = 6;
 
 // These offsets match the current ABCJS SVG output for grace-note heads and beams.
-function getTranslateX(element) {
+function getTranslateX(element: SVGElement): number | null {
   const match = element
     .getAttribute("transform")
     ?.match(/translate\(\s*(-?[\d.]+)/);
@@ -11,7 +11,10 @@ function getTranslateX(element) {
   return match ? Number(match[1]) : null;
 }
 
-function getHorizontalBounds(path) {
+function getHorizontalBounds(path: SVGPathElement): {
+  left: number;
+  right: number;
+} | null {
   const pathData = path.getAttribute("d");
   if (!pathData) return null;
 
@@ -27,7 +30,7 @@ function getHorizontalBounds(path) {
   };
 }
 
-function getStemX(stem) {
+function getStemX(stem: SVGPathElement): number | null {
   const match = stem
     .getAttribute("d")
     ?.match(/^M\s*(-?(?:\d+(?:\.\d*)?|\.\d+))/);
@@ -35,11 +38,13 @@ function getStemX(stem) {
   return match ? Number(match[1]) : null;
 }
 
-function shiftGraceHead(head, amount) {
+function shiftGraceHead(head: SVGPathElement, amount: number): void {
   if (!amount) return;
 
   const transform = head.getAttribute("transform");
-  const match = transform?.match(/^translate\(\s*(-?[\d.]+)/);
+  if (!transform) return;
+
+  const match = transform.match(/^translate\(\s*(-?[\d.]+)/);
   if (!match) return;
 
   const adjustedTranslateX = Number(match[1]) + amount;
@@ -52,47 +57,61 @@ function shiftGraceHead(head, amount) {
   );
 }
 
-function shiftPathHorizontally(path, amount) {
+function shiftPathHorizontally(path: SVGPathElement, amount: number): void {
   if (!amount) return;
 
+  const pathData = path.getAttribute("d");
+  if (!pathData) return;
+
   path.setAttribute(
     "d",
-    path
-      .getAttribute("d")
-      .replace(
-        /([ML])\s*(-?(?:\d+(?:\.\d*)?|\.\d+))(\s+-?(?:\d+(?:\.\d*)?|\.\d+))/g,
-        (_, command, x, remainingCoordinates) =>
-          `${command} ${Number(x) + amount}${remainingCoordinates}`,
-      ),
+    pathData.replace(
+      /([ML])\s*(-?(?:\d+(?:\.\d*)?|\.\d+))(\s+-?(?:\d+(?:\.\d*)?|\.\d+))/g,
+      (_, command, x, remainingCoordinates) =>
+        `${command} ${Number(x) + amount}${remainingCoordinates}`,
+    ),
   );
 }
 
-function scalePathHorizontally(path, scale, pivotX) {
+function scalePathHorizontally(
+  path: SVGPathElement,
+  scale: number,
+  pivotX: number,
+): void {
+  const pathData = path.getAttribute("d");
+  if (!pathData) return;
+
   path.setAttribute(
     "d",
-    path
-      .getAttribute("d")
-      .replace(
-        /([ML])\s*(-?(?:\d+(?:\.\d*)?|\.\d+))(\s+-?(?:\d+(?:\.\d*)?|\.\d+))/g,
-        (_, command, x, remainingCoordinates) =>
-          `${command} ${pivotX + (Number(x) - pivotX) * scale}${remainingCoordinates}`,
-      ),
+    pathData.replace(
+      /([ML])\s*(-?(?:\d+(?:\.\d*)?|\.\d+))(\s+-?(?:\d+(?:\.\d*)?|\.\d+))/g,
+      (_, command, x, remainingCoordinates) =>
+        `${command} ${pivotX + (Number(x) - pivotX) * scale}${remainingCoordinates}`,
+    ),
   );
 }
 
-function compactGraceGroup(note, graceHeads) {
-  const availableStems = [...note.children]
-    .filter((child) => child.classList.contains("abcjs-stem"))
-    .map((element) => ({ element, x: getStemX(element) }))
-    .filter(({ x }) => x !== null);
+function compactGraceGroup(
+  note: SVGElement,
+  graceHeads: SVGPathElement[],
+): void {
+  const availableStems = Array.from(
+    note.querySelectorAll<SVGPathElement>(":scope > .abcjs-stem"),
+  ).flatMap((element) => {
+    const x = getStemX(element);
+    return x === null ? [] : [{ element, x }];
+  });
 
   if (availableStems.length < graceHeads.length) return;
 
-  const graceHeadPositions = graceHeads.map(getTranslateX);
-  if (graceHeadPositions.some((position) => position === null)) return;
+  const graceHeadPositions = graceHeads
+    .map(getTranslateX)
+    .filter((position): position is number => position !== null);
+  if (graceHeadPositions.length !== graceHeads.length) return;
 
   const unusedStems = new Set(availableStems);
-  const graceStems = graceHeadPositions.map((headPosition) => {
+  const graceStems: SVGPathElement[] = [];
+  for (const headPosition of graceHeadPositions) {
     const expectedStemX = headPosition + STEM_X_OFFSET;
     const matchingStem = [...unusedStems].reduce((closestStem, stem) =>
       Math.abs(stem.x - expectedStemX) < Math.abs(closestStem.x - expectedStemX)
@@ -100,12 +119,11 @@ function compactGraceGroup(note, graceHeads) {
         : closestStem,
     );
 
-    if (Math.abs(matchingStem.x - expectedStemX) > 2) return null;
+    if (Math.abs(matchingStem.x - expectedStemX) > 2) return;
     unusedStems.delete(matchingStem);
-    return matchingStem.element;
-  });
-
-  if (graceStems.some((stem) => stem === null)) return;
+    graceStems.push(matchingStem.element);
+  }
+  if (graceStems.length !== graceHeads.length) return;
 
   const horizontalStep =
     COMPACT_GRACE_NOTE_SPACING / DEFAULT_GRACE_NOTE_SPACING;
@@ -125,12 +143,13 @@ function compactGraceGroup(note, graceHeads) {
   const lastGraceX =
     graceHeadPositions[graceHeadPositions.length - 1] + STEM_X_OFFSET;
   const expectedWidth = lastGraceX - firstGraceX;
-  const beam = [...parent.querySelectorAll(".abcjs-beam-elem")]
-    .map((element) => ({
-      element,
-      bounds: getHorizontalBounds(element),
-    }))
-    .filter(({ bounds }) => bounds)
+  const beam = Array.from(
+    parent.querySelectorAll<SVGPathElement>(".abcjs-beam-elem"),
+  )
+    .flatMap((element) => {
+      const bounds = getHorizontalBounds(element);
+      return bounds ? [{ element, bounds }] : [];
+    })
     .find(
       ({ bounds }) =>
         Math.abs(bounds.left - firstGraceX) < 4 &&
@@ -143,12 +162,12 @@ function compactGraceGroup(note, graceHeads) {
   }
 }
 
-export function compactGraceNoteSpacing(scoreSvg) {
-  scoreSvg.querySelectorAll(".abcjs-note").forEach((note) => {
-    const graceHeads = [...note.children].filter(
-      (child) =>
-        child.classList.contains("abcjs-notehead") &&
-        child.hasAttribute("transform"),
+export function compactGraceNoteSpacing(scoreSvg: SVGSVGElement): void {
+  scoreSvg.querySelectorAll<SVGElement>(".abcjs-note").forEach((note) => {
+    const graceHeads = Array.from(
+      note.querySelectorAll<SVGPathElement>(
+        ":scope > .abcjs-notehead[transform]",
+      ),
     );
 
     if (graceHeads.length > 1) compactGraceGroup(note, graceHeads);

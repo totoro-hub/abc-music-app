@@ -1,7 +1,18 @@
 import { useState } from "react";
+import type { ReactElement } from "react";
 import { saveScoreAsPdf } from "../saveScoreAsPdf.js";
 
-function TuneInput({ abcString, onAbcChange, onClear }) {
+interface TuneInputProps {
+  abcString: string;
+  onAbcChange: (abcString: string) => void;
+  onClear: () => void;
+}
+
+function TuneInput({
+  abcString,
+  onAbcChange,
+  onClear,
+}: TuneInputProps): ReactElement {
   const [exportError, setExportError] = useState("");
   const [isExporting, setIsExporting] = useState(false);
 
@@ -10,7 +21,7 @@ function TuneInput({ abcString, onAbcChange, onClear }) {
     setIsExporting(true);
 
     try {
-      const scoreSvg = document.querySelector(".score svg");
+      const scoreSvg = document.querySelector<SVGSVGElement>(".score svg");
       if (!scoreSvg) {
         throw new Error("The sheet music is not ready to export.");
       }

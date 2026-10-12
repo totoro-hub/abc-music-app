@@ -1,8 +1,10 @@
 import { useState } from "react";
-import TuneAudio from "./components/TuneAudio.jsx";
-import TuneBookList from "./components/TuneBookList.jsx";
-import TuneInput from "./components/TuneInput.jsx";
-import TuneViewer from "./components/TuneViewer.jsx";
+import type { ReactElement } from "react";
+import type { Tune } from "./data/initialTuneBook.js";
+import TuneAudio from "./components/TuneAudio.js";
+import TuneBookList from "./components/TuneBookList.js";
+import TuneInput from "./components/TuneInput.js";
+import TuneViewer from "./components/TuneViewer.js";
 import {
   INITIAL_ACTIVE_TUNE_ID,
   INITIAL_TUNE_BOOK,
@@ -10,15 +12,15 @@ import {
 import { readAbcHeader } from "./readAbcHeader.js";
 import "./App.css";
 
-function App() {
-  const [tuneBook, setTuneBook] = useState(INITIAL_TUNE_BOOK);
+function App(): ReactElement {
+  const [tuneBook, setTuneBook] = useState<Tune[]>(INITIAL_TUNE_BOOK);
   const [activeTuneId, setActiveTuneId] = useState(INITIAL_ACTIVE_TUNE_ID);
 
   const activeTune =
     tuneBook.find((tune) => tune.id === activeTuneId) ?? tuneBook[0];
   const abcString = activeTune?.abcString ?? "";
 
-  function updateActiveAbc(nextAbcString) {
+  function updateActiveAbc(nextAbcString: string): void {
     if (!activeTune) return;
 
     setTuneBook((tunes) =>

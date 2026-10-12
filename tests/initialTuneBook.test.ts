@@ -1,30 +1,59 @@
 import { describe, expect, it } from "vitest";
+import type { VoiceItem } from "abcjs";
 import abcjs from "abcjs";
 import { compactGraceNoteSpacing } from "../src/utils/compactGraceNoteSpacing.js";
 import { INITIAL_TUNE_BOOK } from "../src/data/initialTuneBook.js";
 
+function requireValue<T>(value: T | null | undefined): T {
+  if (value === null || value === undefined) {
+    throw new Error("Expected a value in the rendered score.");
+  }
+
+  return value;
+}
+
+function readFirstNumber(value: string | null, pattern: RegExp): number {
+  const match = value?.match(pattern);
+  if (!match) throw new Error("Expected numeric SVG coordinates.");
+
+  return Number(match[1]);
+}
+
+function hasGraceNotes(
+  item: VoiceItem,
+): item is VoiceItem & { gracenotes: unknown[] } {
+  return "gracenotes" in item && Array.isArray(item.gracenotes);
+}
+
 describe("INITIAL_TUNE_BOOK", () => {
   it("disables grace-note slurs for Scotland the Brave", () => {
-    const scotlandTheBrave = INITIAL_TUNE_BOOK.find(
-      (tune) => tune.title === "Scotland the Brave",
+    const scotlandTheBrave = requireValue(
+      INITIAL_TUNE_BOOK.find((tune) => tune.title === "Scotland the Brave"),
     );
 
     expect(scotlandTheBrave.abcString).toContain("%%graceslurs 0");
   });
 
   it("enables bagpipe grace-note engraving", () => {
-    const scotlandTheBrave = INITIAL_TUNE_BOOK.find(
-      (tune) => tune.title === "Scotland the Brave",
+    const scotlandTheBrave = requireValue(
+      INITIAL_TUNE_BOOK.find((tune) => tune.title === "Scotland the Brave"),
     );
-    const [parsedTune] = abcjs.parseOnly(scotlandTheBrave.abcString);
+    const parsedTune = requireValue(
+      abcjs.parseOnly(scotlandTheBrave.abcString)[0],
+    );
     const graceGroups = parsedTune.lines.flatMap(
       (line) =>
-        line.staff?.flatMap((staff) =>
-          staff.voices.flatMap((voice) =>
-            voice
-              .filter((note) => note.gracenotes?.length)
-              .map((note) => note.gracenotes),
-          ),
+        line.staff?.flatMap(
+          (staff) =>
+            staff.voices?.flatMap((voice) =>
+              voice.flatMap((item) =>
+                item.el_type === "note" &&
+                hasGraceNotes(item) &&
+                item.gracenotes.length
+                  ? [item.gracenotes]
+                  : [],
+              ),
+            ) ?? [],
         ) ?? [],
     );
 
@@ -34,12 +63,12 @@ describe("INITIAL_TUNE_BOOK", () => {
 
   it("renders every single grace note in the tune with three tails", () => {
     const output = document.createElement("div");
-    const scotlandTheBrave = INITIAL_TUNE_BOOK.find(
-      (tune) => tune.title === "Scotland the Brave",
+    const scotlandTheBrave = requireValue(
+      INITIAL_TUNE_BOOK.find((tune) => tune.title === "Scotland the Brave"),
     );
 
     abcjs.renderAbc(output, scotlandTheBrave.abcString, { add_classes: true });
-    const scoreSvg = output.querySelector("svg");
+    const scoreSvg = requireValue(output.querySelector("svg"));
     compactGraceNoteSpacing(scoreSvg);
 
     const singleGraceNotes = [...scoreSvg.querySelectorAll(".abcjs-note")]
@@ -75,7 +104,7 @@ describe("INITIAL_TUNE_BOOK", () => {
 
     expect(
       [...output.querySelectorAll(".abcjs-beam-elem")].some(
-        (beam) => beam.getAttribute("d").match(/z/gi)?.length === 3,
+        (beam) => beam.getAttribute("d")?.match(/z/gi)?.length === 3,
       ),
     ).toBe(true);
   });
@@ -93,10 +122,12 @@ describe("INITIAL_TUNE_BOOK", () => {
 
     abcjs.renderAbc(output, abcString, { add_classes: true });
 
-    const scoreSvg = output.querySelector("svg");
-    const graceNote = [...scoreSvg.querySelectorAll(".abcjs-note")].find(
-      (note) =>
-        note.querySelectorAll(".abcjs-notehead[transform]").length === 4,
+    const scoreSvg = requireValue(output.querySelector("svg"));
+    const graceNote = requireValue(
+      [...scoreSvg.querySelectorAll(".abcjs-note")].find(
+        (note) =>
+          note.querySelectorAll(".abcjs-notehead[transform]").length === 4,
+      ),
     );
     const graceHeads = [
       ...graceNote.querySelectorAll(".abcjs-notehead[transform]"),
@@ -105,18 +136,20 @@ describe("INITIAL_TUNE_BOOK", () => {
       .filter((child) => child.classList.contains("abcjs-stem"))
       .sort(
         (firstStem, secondStem) =>
-          Number(firstStem.getAttribute("d").match(/^M\s*(-?[\d.]+)/)[1]) -
-          Number(secondStem.getAttribute("d").match(/^M\s*(-?[\d.]+)/)[1]),
+          readFirstNumber(firstStem.getAttribute("d"), /^M\s*(-?[\d.]+)/) -
+          readFirstNumber(secondStem.getAttribute("d"), /^M\s*(-?[\d.]+)/),
       )
       .slice(0, 4);
     const getStemPositions = () =>
       graceStems.map((stem) =>
-        Number(stem.getAttribute("d").match(/^M\s*(-?[\d.]+)/)[1]),
+        readFirstNumber(stem.getAttribute("d"), /^M\s*(-?[\d.]+)/),
       );
-    const graceBeam = graceNote.parentElement.querySelector(".abcjs-beam-elem");
+    const graceBeam = requireValue(
+      requireValue(graceNote.parentElement).querySelector(".abcjs-beam-elem"),
+    );
     const getBeamBounds = () => {
       const beamCoordinates = [
-        ...graceBeam.getAttribute("d").matchAll(/[ML]\s*(-?[\d.]+)/g),
+        ...(graceBeam.getAttribute("d") ?? "").matchAll(/[ML]\s*(-?[\d.]+)/g),
       ].map((match) => Number(match[1]));
 
       return {
@@ -129,13 +162,15 @@ describe("INITIAL_TUNE_BOOK", () => {
       originalBeamBounds.right - originalBeamBounds.left;
     const getHeadPositions = () =>
       graceHeads.map((head) => {
-        const transform = head.getAttribute("transform");
-        const [, currentTranslateX, scaleX, originalTranslateX] =
+        const transform = requireValue(head.getAttribute("transform"));
+        const [, currentTranslateX, scaleX, originalTranslateX] = requireValue(
           transform.match(
             /translate\(([\d.]+) [\d.]+\) scale\(([\d.]+)[^)]*\) translate\((-?[\d.]+)/,
-          );
-        const headPathX = Number(
-          head.getAttribute("d").match(/^M\s*(-?[\d.]+)/)[1],
+          ),
+        );
+        const headPathX = readFirstNumber(
+          head.getAttribute("d"),
+          /^M\s*(-?[\d.]+)/,
         );
         const renderedHeadPosition =
           headPathX * Number(scaleX) +

@@ -7,18 +7,36 @@ const { mockPdfSvg, mockSave, mockJsPDF } = vi.hoisted(() => ({
   mockJsPDF: vi.fn(),
 }));
 
-vi.mock("jspdf", () => ({
-  jsPDF: mockJsPDF.mockImplementation(function ({ orientation }) {
-    const isLandscape = orientation === "landscape";
-    this.internal = {
-      pageSize: {
-        getWidth: () => (isLandscape ? 841.89 : 595.28),
-        getHeight: () => (isLandscape ? 595.28 : 841.89),
-      },
+type MockPdfOrientation = "landscape" | "portrait";
+
+interface MockPdfInstance {
+  internal: {
+    pageSize: {
+      getWidth: () => number;
+      getHeight: () => number;
     };
-    this.svg = mockPdfSvg;
-    this.save = mockSave;
-  }),
+  };
+  svg: typeof mockPdfSvg;
+  save: typeof mockSave;
+}
+
+function createMockPdf(
+  this: MockPdfInstance,
+  { orientation }: { orientation: MockPdfOrientation },
+): void {
+  const isLandscape = orientation === "landscape";
+  this.internal = {
+    pageSize: {
+      getWidth: () => (isLandscape ? 841.89 : 595.28),
+      getHeight: () => (isLandscape ? 595.28 : 841.89),
+    },
+  };
+  this.svg = mockPdfSvg;
+  this.save = mockSave;
+}
+
+vi.mock("jspdf", () => ({
+  jsPDF: mockJsPDF.mockImplementation(createMockPdf),
 }));
 
 vi.mock("svg2pdf.js", () => ({}));
@@ -26,20 +44,10 @@ vi.mock("svg2pdf.js", () => ({}));
 describe("saveScoreAsPdf", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockJsPDF.mockImplementation(function ({ orientation }) {
-      const isLandscape = orientation === "landscape";
-      this.internal = {
-        pageSize: {
-          getWidth: () => (isLandscape ? 841.89 : 595.28),
-          getHeight: () => (isLandscape ? 595.28 : 841.89),
-        },
-      };
-      this.svg = mockPdfSvg;
-      this.save = mockSave;
-    });
+    mockJsPDF.mockImplementation(createMockPdf);
   });
 
-  function createScoreSvg(lineCount) {
+  function createScoreSvg(lineCount: number): SVGSVGElement {
     const scoreSvg = document.createElementNS(
       "http://www.w3.org/2000/svg",
       "svg",
@@ -47,7 +55,7 @@ describe("saveScoreAsPdf", () => {
     Object.defineProperty(scoreSvg, "viewBox", {
       value: { baseVal: { width: 200, height: 100 } },
     });
-    scoreSvg.getBBox = () => ({ width: 200, height: 100 });
+    scoreSvg.getBBox = () => new DOMRect(0, 0, 200, 100);
     scoreSvg.innerHTML = Array.from(
       { length: lineCount },
       () => '<g class="abcjs-staff-wrapper"></g>',
@@ -89,7 +97,7 @@ describe("saveScoreAsPdf", () => {
     const scoreSvg = createScoreSvg(1);
     scoreSvg.viewBox.baseVal.width = 0;
     scoreSvg.viewBox.baseVal.height = 0;
-    scoreSvg.getBBox = () => ({ width: 0, height: 0 });
+    scoreSvg.getBBox = () => new DOMRect(0, 0, 0, 0);
 
     await expect(saveScoreAsPdf(scoreSvg, "T:Empty")).rejects.toThrow(
       "The rendered score has no printable dimensions.",

@@ -1,4 +1,6 @@
-function TuneAudio() {
+import type { ReactElement } from "react";
+
+function TuneAudio(): ReactElement {
   return (
     <section className="audio-panel no-print" aria-labelledby="audio-title">
       <div className="panel-heading">

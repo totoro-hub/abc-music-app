@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { saveScoreAsPdf } from "../../src/saveScoreAsPdf.js";
-import TuneInput from "../../src/components/TuneInput.jsx";
+import TuneInput from "../../src/components/TuneInput.js";
 
 vi.mock("../../src/saveScoreAsPdf.js", () => ({
   saveScoreAsPdf: vi.fn(),

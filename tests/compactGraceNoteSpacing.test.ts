@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { compactGraceNoteSpacing } from "../src/utils/compactGraceNoteSpacing.js";
 
-function renderGraceNoteScore(graceNoteCount) {
+function renderGraceNoteScore(graceNoteCount: number) {
   const scoreSvg = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "svg",
@@ -48,13 +48,13 @@ function renderGraceNoteScore(graceNoteCount) {
 describe("compactGraceNoteSpacing", () => {
   it.each([2, 3, 4])(
     "compacts a group of %i grace notes without moving the main note",
-    (graceNoteCount) => {
+    (graceNoteCount: number) => {
       const { scoreSvg, mainHead, graceHeads } =
         renderGraceNoteScore(graceNoteCount);
       compactGraceNoteSpacing(scoreSvg);
 
       expect({
-        mainHeadTransform: mainHead.getAttribute("transform"),
+        mainHeadTransform: mainHead!.getAttribute("transform"),
         graceHeadTransforms: graceHeads.map((head) =>
           head.getAttribute("transform"),
         ),
@@ -74,9 +74,9 @@ describe("compactGraceNoteSpacing", () => {
     compactGraceNoteSpacing(scoreSvg);
 
     expect({
-      mainStemTransform: mainStem.getAttribute("transform"),
+      mainStemTransform: mainStem!.getAttribute("transform"),
       graceStemPaths: graceStems.map((stem) => stem.getAttribute("d")),
-      beamPath: beam.getAttribute("d"),
+      beamPath: beam!.getAttribute("d"),
     }).toEqual({
       mainStemTransform: null,
       graceStemPaths: [
