@@ -88,4 +88,68 @@ describe("compactGraceNoteSpacing", () => {
       beamPath: `M ${lastGraceX - (lastGraceX - 106) * 0.55} 10 L ${lastGraceX} 0 L ${lastGraceX} 2 L ${lastGraceX - (lastGraceX - 106) * 0.55} 12 z`,
     });
   });
+
+  it("compacts grace stems nested inside a group", () => {
+    const { scoreSvg, graceHeads, graceStems } = renderGraceNoteScore(4);
+    const note = scoreSvg.querySelector(".abcjs-note")!;
+    const stemGroup = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "g",
+    );
+
+    graceStems.forEach((stem) => stemGroup.append(stem));
+    note.insertBefore(stemGroup, note.lastElementChild);
+    compactGraceNoteSpacing(scoreSvg);
+
+    expect(graceHeads.map((head) => head.getAttribute("transform"))).toEqual(
+      graceHeads.map(
+        (_, index) =>
+          `translate(${100 + index * 10 + (3 - index) * 4.5} 10) scale(0.6,0.6) translate(-${100 + index * 10} -10)`,
+      ),
+    );
+    expect(graceStems.map((stem) => stem.getAttribute("d"))).toEqual([
+      "M 119.5 20 L 119.5 40",
+      "M 125 20 L 125 40",
+      "M 130.5 20 L 130.5 40",
+      "M136 20 L136 40",
+    ]);
+  });
+
+  it("compacts grace stems rendered as SVG lines", () => {
+    const { scoreSvg, graceHeads, graceStems } = renderGraceNoteScore(4);
+    const graceLines = graceStems.map((stem) => {
+      const stemX = Number(stem.getAttribute("d")?.match(/^M\s*([\d.]+)/)?.[1]);
+      const line = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "line",
+      );
+      line.setAttribute("class", "abcjs-stem");
+      line.setAttribute("x1", String(stemX));
+      line.setAttribute("x2", String(stemX));
+      line.setAttribute("y1", "20");
+      line.setAttribute("y2", "40");
+      stem.replaceWith(line);
+      return line;
+    });
+
+    compactGraceNoteSpacing(scoreSvg);
+
+    expect(graceHeads.map((head) => head.getAttribute("transform"))).toEqual(
+      graceHeads.map(
+        (_, index) =>
+          `translate(${100 + index * 10 + (3 - index) * 4.5} 10) scale(0.6,0.6) translate(-${100 + index * 10} -10)`,
+      ),
+    );
+    expect(
+      graceLines.map((line) => [
+        line.getAttribute("x1"),
+        line.getAttribute("x2"),
+      ]),
+    ).toEqual([
+      ["119.5", "119.5"],
+      ["125", "125"],
+      ["130.5", "130.5"],
+      ["136", "136"],
+    ]);
+  });
 });

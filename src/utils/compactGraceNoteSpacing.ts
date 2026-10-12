@@ -30,12 +30,40 @@ function getHorizontalBounds(path: SVGPathElement): {
   };
 }
 
-function getStemX(stem: SVGPathElement): number | null {
+function getStemX(stem: SVGElement): number | null {
+  if (stem.localName === "line") {
+    const x1Attribute = stem.getAttribute("x1");
+    const x2Attribute = stem.getAttribute("x2");
+    if (x1Attribute === null || x2Attribute === null) return null;
+
+    const x1 = Number(x1Attribute);
+    const x2 = Number(x2Attribute);
+    return Number.isFinite(x1) && Number.isFinite(x2) ? (x1 + x2) / 2 : null;
+  }
+
   const match = stem
     .getAttribute("d")
     ?.match(/^M\s*(-?(?:\d+(?:\.\d*)?|\.\d+))/);
 
   return match ? Number(match[1]) : null;
+}
+
+function shiftGraceStemHorizontally(stem: SVGElement, amount: number): void {
+  if (stem.localName === "line") {
+    for (const attribute of ["x1", "x2"]) {
+      const attributeValue = stem.getAttribute(attribute);
+      if (attributeValue === null) continue;
+
+      const value = Number(attributeValue);
+      if (Number.isFinite(value))
+        stem.setAttribute(attribute, String(value + amount));
+    }
+    return;
+  }
+
+  if (stem.localName === "path") {
+    shiftPathHorizontally(stem as SVGPathElement, amount);
+  }
 }
 
 function shiftGraceHead(head: SVGPathElement, amount: number): void {
@@ -95,9 +123,10 @@ function compactGraceGroup(
   note: SVGElement,
   graceHeads: SVGPathElement[],
 ): void {
-  const availableStems = Array.from(
-    note.querySelectorAll<SVGPathElement>(":scope > .abcjs-stem"),
-  ).flatMap((element) => {
+  const stemElements = Array.from(
+    note.querySelectorAll<SVGElement>(".abcjs-stem"),
+  );
+  const availableStems = stemElements.flatMap((element) => {
     const x = getStemX(element);
     return x === null ? [] : [{ element, x }];
   });
@@ -110,7 +139,7 @@ function compactGraceGroup(
   if (graceHeadPositions.length !== graceHeads.length) return;
 
   const unusedStems = new Set(availableStems);
-  const graceStems: SVGPathElement[] = [];
+  const graceStems: SVGElement[] = [];
   for (const headPosition of graceHeadPositions) {
     const expectedStemX = headPosition + STEM_X_OFFSET;
     const matchingStem = [...unusedStems].reduce((closestStem, stem) =>
@@ -133,7 +162,7 @@ function compactGraceGroup(
       (graceHeads.length - index - 1) *
       (DEFAULT_GRACE_NOTE_SPACING - COMPACT_GRACE_NOTE_SPACING);
     shiftGraceHead(head, shift);
-    shiftPathHorizontally(graceStems[index], shift);
+    shiftGraceStemHorizontally(graceStems[index], shift);
   });
 
   const parent = note.parentElement;
