@@ -1,6 +1,12 @@
+import {
+  alignGraceNoteBeams,
+  type GraceBeamGroup,
+} from "./alignGraceNoteBeams.js";
+
 const DEFAULT_GRACE_NOTE_SPACING = 10;
-const COMPACT_GRACE_NOTE_SPACING = 5.5;
+const COMPACT_GRACE_NOTE_SPACING = 7;
 const STEM_X_OFFSET = 6;
+const LEDGER_ALIGNMENT_TOLERANCE = 4;
 
 // These offsets match the current ABCJS SVG output for grace-note heads and beams.
 function getTranslateX(element: SVGElement): number | null {
@@ -11,11 +17,24 @@ function getTranslateX(element: SVGElement): number | null {
   return match ? Number(match[1]) : null;
 }
 
-function getHorizontalBounds(path: SVGPathElement): {
+function getHorizontalBounds(element: SVGElement): {
   left: number;
   right: number;
 } | null {
-  const pathData = path.getAttribute("d");
+  if (element.localName === "line") {
+    const x1Attribute = element.getAttribute("x1");
+    const x2Attribute = element.getAttribute("x2");
+    if (x1Attribute === null || x2Attribute === null) return null;
+
+    const x1 = Number(x1Attribute);
+    const x2 = Number(x2Attribute);
+    if (!Number.isFinite(x1) || !Number.isFinite(x2)) return null;
+
+    return { left: Math.min(x1, x2), right: Math.max(x1, x2) };
+  }
+
+  if (element.localName !== "path") return null;
+  const pathData = element.getAttribute("d");
   if (!pathData) return null;
 
   const coordinates = [
@@ -48,21 +67,24 @@ function getStemX(stem: SVGElement): number | null {
   return match ? Number(match[1]) : null;
 }
 
-function shiftGraceStemHorizontally(stem: SVGElement, amount: number): void {
-  if (stem.localName === "line") {
+function shiftSvgElementHorizontally(
+  element: SVGElement,
+  amount: number,
+): void {
+  if (element.localName === "line") {
     for (const attribute of ["x1", "x2"]) {
-      const attributeValue = stem.getAttribute(attribute);
+      const attributeValue = element.getAttribute(attribute);
       if (attributeValue === null) continue;
 
       const value = Number(attributeValue);
       if (Number.isFinite(value))
-        stem.setAttribute(attribute, String(value + amount));
+        element.setAttribute(attribute, String(value + amount));
     }
     return;
   }
 
-  if (stem.localName === "path") {
-    shiftPathHorizontally(stem as SVGPathElement, amount);
+  if (element.localName === "path") {
+    shiftPathHorizontally(element as SVGPathElement, amount);
   }
 }
 
@@ -119,10 +141,28 @@ function scalePathHorizontally(
   );
 }
 
+function shiftGraceLedgerLines(
+  note: SVGElement,
+  headPosition: number,
+  amount: number,
+): void {
+  if (!amount) return;
+
+  note.querySelectorAll<SVGElement>(".abcjs-ledger").forEach((ledger) => {
+    const bounds = getHorizontalBounds(ledger);
+    if (!bounds) return;
+
+    const center = (bounds.left + bounds.right) / 2;
+    if (Math.abs(center - headPosition) <= LEDGER_ALIGNMENT_TOLERANCE) {
+      shiftSvgElementHorizontally(ledger, amount);
+    }
+  });
+}
+
 function compactGraceGroup(
   note: SVGElement,
   graceHeads: SVGPathElement[],
-): void {
+): GraceBeamGroup | null {
   const stemElements = Array.from(
     note.querySelectorAll<SVGElement>(".abcjs-stem"),
   );
@@ -131,12 +171,12 @@ function compactGraceGroup(
     return x === null ? [] : [{ element, x }];
   });
 
-  if (availableStems.length < graceHeads.length) return;
+  if (availableStems.length < graceHeads.length) return null;
 
   const graceHeadPositions = graceHeads
     .map(getTranslateX)
     .filter((position): position is number => position !== null);
-  if (graceHeadPositions.length !== graceHeads.length) return;
+  if (graceHeadPositions.length !== graceHeads.length) return null;
 
   const unusedStems = new Set(availableStems);
   const graceStems: SVGElement[] = [];
@@ -148,11 +188,11 @@ function compactGraceGroup(
         : closestStem,
     );
 
-    if (Math.abs(matchingStem.x - expectedStemX) > 2) return;
+    if (Math.abs(matchingStem.x - expectedStemX) > 2) return null;
     unusedStems.delete(matchingStem);
     graceStems.push(matchingStem.element);
   }
-  if (graceStems.length !== graceHeads.length) return;
+  if (graceStems.length !== graceHeads.length) return null;
 
   const horizontalStep =
     COMPACT_GRACE_NOTE_SPACING / DEFAULT_GRACE_NOTE_SPACING;
@@ -162,11 +202,12 @@ function compactGraceGroup(
       (graceHeads.length - index - 1) *
       (DEFAULT_GRACE_NOTE_SPACING - COMPACT_GRACE_NOTE_SPACING);
     shiftGraceHead(head, shift);
-    shiftGraceStemHorizontally(graceStems[index], shift);
+    shiftSvgElementHorizontally(graceStems[index], shift);
+    shiftGraceLedgerLines(note, graceHeadPositions[index], shift);
   });
 
   const parent = note.parentElement;
-  if (!parent) return;
+  if (!parent) return null;
 
   const firstGraceX = graceHeadPositions[0] + STEM_X_OFFSET;
   const lastGraceX =
@@ -186,12 +227,15 @@ function compactGraceGroup(
         Math.abs(bounds.right - bounds.left - expectedWidth) < 4,
     );
 
-  if (beam) {
-    scalePathHorizontally(beam.element, horizontalStep, lastGraceX);
-  }
+  if (!beam) return null;
+
+  scalePathHorizontally(beam.element, horizontalStep, lastGraceX);
+  return { beam: beam.element, stems: graceStems };
 }
 
 export function compactGraceNoteSpacing(scoreSvg: SVGSVGElement): void {
+  const staffGroups = new Map<Element, GraceBeamGroup[]>();
+
   scoreSvg.querySelectorAll<SVGElement>(".abcjs-note").forEach((note) => {
     const graceHeads = Array.from(
       note.querySelectorAll<SVGPathElement>(
@@ -199,6 +243,14 @@ export function compactGraceNoteSpacing(scoreSvg: SVGSVGElement): void {
       ),
     );
 
-    if (graceHeads.length > 1) compactGraceGroup(note, graceHeads);
+    if (graceHeads.length < 2) return;
+
+    const beamGroup = compactGraceGroup(note, graceHeads);
+    if (!beamGroup) return;
+
+    const staff = note.closest(".abcjs-staff-wrapper") ?? scoreSvg;
+    staffGroups.set(staff, [...(staffGroups.get(staff) ?? []), beamGroup]);
   });
+
+  staffGroups.forEach(alignGraceNoteBeams);
 }

@@ -1,6 +1,9 @@
 import { useEffect, useRef } from "react";
 import type { ReactElement } from "react";
 import { compactGraceNoteSpacing } from "../utils/compactGraceNoteSpacing.js";
+import { expandStaffLineSpacing } from "../utils/expandStaffLineSpacing.js";
+
+const FONT_FAMILY = "Verdana, Geneva, sans-serif";
 
 interface TuneViewerProps {
   abcString: string;
@@ -37,9 +40,24 @@ function TuneViewer({ abcString }: TuneViewerProps): ReactElement {
         abcjs.renderAbc(scoreContainer, abcString, {
           responsive: "resize",
           add_classes: true,
+          expandToWidest: true, // Ensures the score takes up the full width of the container
+          paddingleft: 0,
+          paddingright: 0,
+          lineThickness: 0.6,
+          format: {
+            titlefont: `${FONT_FAMILY} 32 bold`,
+            composerfont: `${FONT_FAMILY} 20`,
+            subtitlefont: `${FONT_FAMILY} 20`,
+            headerfont: `${FONT_FAMILY} 20`,
+            footerfont: `${FONT_FAMILY} 20`,
+            infofont: `${FONT_FAMILY} 20`,
+          }
         });
         const scoreSvg = scoreContainer.querySelector<SVGSVGElement>("svg");
-        if (scoreSvg) compactGraceNoteSpacing(scoreSvg);
+        if (scoreSvg) {
+          compactGraceNoteSpacing(scoreSvg);
+          expandStaffLineSpacing(scoreSvg);
+        }
       } catch (error) {
         if (!isCurrentRender) return;
         renderErrorElement.textContent = `Could not render the score: ${

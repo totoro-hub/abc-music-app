@@ -188,20 +188,173 @@ describe("INITIAL_TUNE_BOOK", () => {
         .map((position, index) =>
           Number((position - getHeadPositions()[index]).toFixed(8)),
         ),
-    ).toEqual([5.5, 5.5, 5.5]);
+    ).toEqual([7, 7, 7]);
     expect(
       getStemPositions()
         .slice(1)
         .map((position, index) =>
           Number((position - getStemPositions()[index]).toFixed(8)),
         ),
-    ).toEqual([5.5, 5.5, 5.5]);
+    ).toEqual([7, 7, 7]);
     const compactedBeamBounds = getBeamBounds();
     const compactedStemPositions = getStemPositions();
     expect(compactedBeamBounds.left).toBeCloseTo(compactedStemPositions[0], 0);
     expect(compactedBeamBounds.right).toBeCloseTo(compactedStemPositions[3], 0);
     expect(compactedBeamBounds.right - compactedBeamBounds.left).toBeCloseTo(
-      originalBeamWidth * 0.55,
+      originalBeamWidth * 0.7,
+    );
+    const beamTopEdges = [
+      ...(graceBeam.getAttribute("d") ?? "").matchAll(
+        /M\s*-?[\d.]+\s+(-?[\d.]+)\s+L\s*-?[\d.]+\s+(-?[\d.]+)/g,
+      ),
+    ];
+    expect(beamTopEdges.length).toBeGreaterThan(0);
+    expect(
+      beamTopEdges.every(
+        (match) => Number(match[1]) === Number(match[2]),
+      ),
+    ).toBe(true);
+  });
+
+  it("moves the ledger line with a high grace-note head", () => {
+    const output = document.createElement("div");
+    const abcString = [
+      "X:1",
+      "T:Test",
+      "M:4/4",
+      "K:D",
+      "%%bagpipes",
+      "{ag}a2|",
+    ].join("\n");
+
+    abcjs.renderAbc(output, abcString, { add_classes: true });
+
+    const scoreSvg = requireValue(output.querySelector("svg"));
+    const graceNote = requireValue(
+      [...scoreSvg.querySelectorAll(".abcjs-note")].find(
+        (note) =>
+          note.querySelectorAll(".abcjs-notehead[transform]").length === 2,
+      ),
+    );
+    const graceHeads = [
+      ...graceNote.querySelectorAll<SVGPathElement>(
+        ".abcjs-notehead[transform]",
+      ),
+    ];
+    const firstHeadPosition = readFirstNumber(
+      graceHeads[0].getAttribute("transform"),
+      /^translate\(\s*(-?[\d.]+)/,
+    );
+    const firstHeadTranslate = firstHeadPosition;
+    const ledgerLines = [
+      ...graceNote.querySelectorAll<SVGPathElement>(".abcjs-ledger"),
+    ];
+    const highNoteLedger = requireValue(
+      ledgerLines
+        .map((ledger) => {
+          const positions = [
+            ...(ledger.getAttribute("d") ?? "").matchAll(/[ML]\s*(-?[\d.]+)/g),
+          ].map((match) => Number(match[1]));
+
+          return {
+            ledger,
+            center: (Math.min(...positions) + Math.max(...positions)) / 2,
+          };
+        })
+        .filter(({ center }) => Math.abs(center - firstHeadPosition) < 4)
+        .sort(
+          (firstLedger, secondLedger) =>
+            Math.abs(firstLedger.center - firstHeadPosition) -
+            Math.abs(secondLedger.center - firstHeadPosition),
+        )[0],
+    );
+    const initialLedgerX = readFirstNumber(
+      highNoteLedger.ledger.getAttribute("d"),
+      /^M\s*(-?[\d.]+)/,
+    );
+
+    compactGraceNoteSpacing(scoreSvg);
+
+    const compactedHeadTranslate = readFirstNumber(
+      graceHeads[0].getAttribute("transform"),
+      /^translate\(\s*(-?[\d.]+)/,
+    );
+    const compactedLedgerX = readFirstNumber(
+      highNoteLedger.ledger.getAttribute("d"),
+      /^M\s*(-?[\d.]+)/,
+    );
+
+    expect(compactedLedgerX - initialLedgerX).toBeCloseTo(
+      compactedHeadTranslate - firstHeadTranslate,
+    );
+  });
+
+  it("moves a line-rendered ledger with its high grace-note head", () => {
+    const output = document.createElement("div");
+    const abcString = [
+      "X:1",
+      "T:Test",
+      "M:4/4",
+      "K:D",
+      "%%bagpipes",
+      "{ag}a2|",
+    ].join("\n");
+
+    abcjs.renderAbc(output, abcString, { add_classes: true });
+
+    const scoreSvg = requireValue(output.querySelector("svg"));
+    const graceNote = requireValue(
+      [...scoreSvg.querySelectorAll(".abcjs-note")].find(
+        (note) =>
+          note.querySelectorAll(".abcjs-notehead[transform]").length === 2,
+      ),
+    );
+    const graceHead = requireValue(
+      graceNote.querySelector<SVGPathElement>(
+        ".abcjs-notehead[transform][data-name='a']",
+      ),
+    );
+    const headTranslateBefore = readFirstNumber(
+      graceHead.getAttribute("transform"),
+      /^translate\(\s*(-?[\d.]+)/,
+    );
+    const ledgerPath = requireValue(
+      [...graceNote.querySelectorAll<SVGPathElement>(".abcjs-ledger")].find(
+        (ledger) => {
+          const coordinates = [
+            ...(ledger.getAttribute("d") ?? "").matchAll(/[ML]\s*(-?[\d.]+)/g),
+          ].map((match) => Number(match[1]));
+          const center =
+            (Math.min(...coordinates) + Math.max(...coordinates)) / 2;
+          return Math.abs(center - headTranslateBefore) < 4;
+        },
+      ),
+    );
+    const coordinates = [
+      ...(ledgerPath.getAttribute("d") ?? "").matchAll(/[ML]\s*(-?[\d.]+)/g),
+    ].map((match) => Number(match[1]));
+    const ledgerLine = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "line",
+    );
+    ledgerLine.setAttribute("class", "abcjs-ledger");
+    ledgerLine.setAttribute("x1", String(coordinates[0]));
+    ledgerLine.setAttribute("x2", String(coordinates[1]));
+    ledgerLine.setAttribute("y1", "109.355");
+    ledgerLine.setAttribute("y2", "109.355");
+    ledgerPath.replaceWith(ledgerLine);
+
+    const ledgerXBefore = Number(ledgerLine.getAttribute("x1"));
+    compactGraceNoteSpacing(scoreSvg);
+
+    const headTranslateAfter = readFirstNumber(
+      graceHead.getAttribute("transform"),
+      /^translate\(\s*(-?[\d.]+)/,
+    );
+    const ledgerXAfter = Number(ledgerLine.getAttribute("x1"));
+
+    expect(ledgerXAfter - ledgerXBefore).toBeCloseTo(
+      headTranslateAfter - headTranslateBefore,
     );
   });
 });

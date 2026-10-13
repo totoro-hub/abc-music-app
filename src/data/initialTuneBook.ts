@@ -14,35 +14,33 @@ export const INITIAL_TUNE_BOOK: Tune[] = [
     type: "March",
     abcString: `X:1
 T:Scotland the Brave
+C: Traditional
 R: March
 M: 4/4
-K: Dmajor
+K: HK
 %%graceslurs 0
 %%bagpipes
-|: e | {g}A2 {GdGe}A>B {gcd}c{e}A {gdc}ce | {ag}a2 {g}a2 {GdG}ae {gcd}c | {g}e{A}e {g}c{e}A |
-{g}f2 {agb}f>f | {g}e{A}e {g}c{e}A | {g}B2 {GdG}B>c | {g}B{d}B {e}G{d}B |
-{g}A2 {GdG}A>B | {g}c{e}c {g}c{e}c | {g}e2 {g}e>d | {g}e{A}e {g}c{e}A |
-{g}f2 {agb}f>f | {g}e{A}e {g}c{e}A | {g}B2 {GdG}A>B | {g}A4 :|
-
-|: {g}e2 {GdG}e>e | {g}e{A}e {g}c2 | {g}e2 {agb}f>e | {g}e{A}e {g}c2 |
-{g}e2 {GdG}e>e | {g}f2 {g}e>f | {g}e{A}e d{e}c | {g}B{d}B {e}G{d}B |
-{g}A2 {GdG}A>B | {g}c{e}c {g}c{e}c | {g}e2 {g}e>d | {g}e{A}e {g}c{e}A |
-{g}f2 {agb}f>f | {g}e{A}e {g}c{e}A | {g}B2 {GdG}A>B | {g}A4 :|`,
+ e [| {g}A2 {GdGe}A>B {gcd}c{e}A {gdc}ce | {ag}a2 {g}a2 {GdG}ae {gcd}c{e}A | {Gdc}d2 {g}f>d {gcd}c2 {gef}e>c | {gBd}B2 {gef}e2 {A}e>f {g}e>d{g}c>B |
+{g}A2 {GdGe}A>B {gcd}c{e}A {gdc}ce | {ag}a2 {g}a2 {GdG}ae {gcd}c{e}A | {Gdc}d2 {g}f>d {gcd}ce {gcd}c{e}A | {GdG}B2 {g}A>B {G}A2 {gcd}ce |]
+[| {ag}a2 {g}a2 {GdG}ae {gcd}c{e}A | {ag}a2 {g}a2 {GdG}ae {gcd}ce | {Gdc}d2 {g}f>d {gcd}c2 {gef}e>c | {gBd}B2 {gef}e2 {A}e>f {g}e>d{g}c>B |
+{g}A2 {GdGe}A>B {gcd}c{e}A {gdc}ce | {ag}a2 {g}a2 {GdG}ae {gcd}c{e}A | {Gdc}d2 {g}f>d {gcd}ce {gcd}c{e}A | {GdG}B2 {g}A>B {G}A2> |]`,
   },
   {
     id: "tune-1",
-    title: "The Maid Behind the Bar",
-    type: "Reel",
+    title: "The Rowan Tree",
+    type: "March",
     abcString: `X:1
-T:The Maid Behind the Bar
-R:reel
+T:The Rowan Tree
+C: Traditional
+R:March
 M:4/4
-L:1/8
-K:D
-FAAB AFED|FAAB ABde|fBBA Bcde|fdBA BcdA|
-FAAB AFED|FAAB ABde|fBBA Bcde|fdcB A2 d2:|
-|:fddc d2 ag|fddc defg|eA A2 eA A2|eAAB cdeg|
-fddc d2 ag|fddc defg|afge fdec|Addc d2 d2:|`,
+K:HK
+%%graceslurs 0
+%%bagpipes
+{g}A>B [| {GdG}c2> {GdG}c2 {gcd}c2 {e}B2 | {g}c e2> {A}e4 a2 | {gfg}f2> e2 {g}f2 a2 | {gfg}f2 e {A}e2 {g}A>B |
+ {GdG}c2> {GdG}c2 {gcd}c2 {e}B2 | {g}c e2> {gfg}f4> e2 | {gef}e2 c2 {gBd}B2> {G}A2 | {g}A4 {GAG}A |]
+{g}e [| {A}e2> a2 {g}a2> g2 | {f}g2 f2 {gfg}f2 {ag}a2 | {ef}e2> f2 {gfg}fe {Gdc}dc | {gcd}c4 {gBd}B2 {g}A>B |
+ {GdG}c2> {GdG}c2 {gcd}c2 {e}B2 | {g}c e2> {gfg}f4> e2 | {gef}e2 c2 {gBd}B2> {G}A2 | {g}A4 {GAG}A2 |]`,
   },
   {
     id: "tune-2",

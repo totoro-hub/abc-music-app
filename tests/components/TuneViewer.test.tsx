@@ -47,7 +47,14 @@ describe("TuneViewer", () => {
       expect(abcjs.renderAbc).toHaveBeenCalledWith(
         expect.any(HTMLElement),
         abcString,
-        { responsive: "resize", add_classes: true },
+        {
+          responsive: "resize",
+          add_classes: true,
+          expandToWidest: true,
+          paddingleft: 0,
+          paddingright: 0,
+          lineThickness: 0.3,
+        },
       );
     });
   });
