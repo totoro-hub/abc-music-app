@@ -133,10 +133,51 @@
   font-size: 11px;
 }
 
-.placeholder-copy {
-  margin: 0;
-  color: #77756c;
+.audio-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.audio-button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 7px;
+  color: #fffdf7;
+  background: #38594a;
+  font: inherit;
   font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.audio-button:hover:not(:disabled) {
+  background: #2d493c;
+}
+
+.audio-button:focus-visible {
+  outline: 2px solid #557965;
+  outline-offset: 3px;
+}
+
+.audio-button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.audio-hint {
+  color: #77756c;
+  font-size: 12px;
+}
+
+.audio-control-host {
+  display: none;
+}
+
+.abcjs-playing {
+  fill: #ba5b32 !important;
+  stroke: #ba5b32 !important;
 }
 
 .work-area {

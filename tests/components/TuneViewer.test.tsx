@@ -26,16 +26,23 @@ describe("TuneViewer", () => {
 
   it("renders a score for non-empty notation", async () => {
     const abcString = ["X:1", "T:Test Tune", "K:C", "CDEF"].join("\n");
+    const renderedTune = {} as TuneObject;
     vi.mocked(abcjs.renderAbc).mockImplementation((container) => {
       if (typeof container === "string") {
         throw new Error("Expected an HTML container.");
       }
       container.innerHTML = '<svg aria-label="Rendered score"></svg>';
-      return [{} as TuneObject];
+      return [renderedTune];
     });
-    render(<TuneViewer abcString={abcString} />);
+    const onTuneRendered = vi.fn();
+    render(
+      <TuneViewer abcString={abcString} onTuneRendered={onTuneRendered} />,
+    );
 
     expect(await screen.findByLabelText("Rendered score")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(onTuneRendered).toHaveBeenLastCalledWith(abcString, renderedTune),
+    );
   });
 
   it("enables ABCJS classes so grace-note spacing can be compacted", async () => {

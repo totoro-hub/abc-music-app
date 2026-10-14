@@ -1,7 +1,11 @@
 # ABC Music App
 
 A React and Vite app for editing ABC music notation, previewing it as sheet music,
-and exporting the score as a PDF.
+playing it in the browser, and exporting the score as a PDF.
+
+Playback uses abcjs's audio synthesizer and highlights notes in the score as they
+play. It requires a browser with Web Audio support and starts after selecting
+**Play tune**.
 
 ## Requirements
 

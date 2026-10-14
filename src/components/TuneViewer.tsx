@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { ReactElement } from "react";
+import type { TuneObject } from "abcjs";
 import { compactGraceNoteSpacing } from "../utils/compactGraceNoteSpacing.js";
 import { expandStaffLineSpacing } from "../utils/expandStaffLineSpacing.js";
 
@@ -7,9 +8,13 @@ const FONT_FAMILY = "Verdana, Geneva, sans-serif";
 
 interface TuneViewerProps {
   abcString: string;
+  onTuneRendered?: (abcString: string, tune: TuneObject | null) => void;
 }
 
-function TuneViewer({ abcString }: TuneViewerProps): ReactElement {
+function TuneViewer({
+  abcString,
+  onTuneRendered,
+}: TuneViewerProps): ReactElement {
   const paperRef = useRef<HTMLDivElement>(null);
   const renderErrorRef = useRef<HTMLParagraphElement>(null);
   const hasScore = Boolean(abcString.trim());
@@ -22,6 +27,7 @@ function TuneViewer({ abcString }: TuneViewerProps): ReactElement {
     const renderErrorElement = renderError;
 
     let isCurrentRender = true;
+    onTuneRendered?.(abcString, null);
     scoreContainer.replaceChildren();
     renderErrorElement.hidden = true;
     renderErrorElement.textContent = "";
@@ -37,22 +43,32 @@ function TuneViewer({ abcString }: TuneViewerProps): ReactElement {
         const { default: abcjs } = await import("abcjs");
         if (!isCurrentRender) return;
 
-        abcjs.renderAbc(scoreContainer, abcString, {
-          responsive: "resize",
-          add_classes: true,
-          expandToWidest: true, // Ensures the score takes up the full width of the container
-          paddingleft: 0,
-          paddingright: 0,
-          lineThickness: 0.6,
-          format: {
-            titlefont: `${FONT_FAMILY} 32 bold`,
-            composerfont: `${FONT_FAMILY} 20`,
-            subtitlefont: `${FONT_FAMILY} 20`,
-            headerfont: `${FONT_FAMILY} 20`,
-            footerfont: `${FONT_FAMILY} 20`,
-            infofont: `${FONT_FAMILY} 20`,
-          }
-        });
+        const globalPipingConfig = `
+%%bagpipes
+%%graceslurs 0
+`;
+
+        const tunes = abcjs.renderAbc(
+          scoreContainer,
+          globalPipingConfig + abcString,
+          {
+            responsive: "resize",
+            add_classes: true,
+            expandToWidest: true, // Ensures the score takes up the full width of the container
+            paddingleft: 0,
+            paddingright: 0,
+            lineThickness: 0.6,
+            format: {
+              titlefont: `${FONT_FAMILY} 32 bold`,
+              composerfont: `${FONT_FAMILY} 20`,
+              subtitlefont: `${FONT_FAMILY} 20`,
+              headerfont: `${FONT_FAMILY} 20`,
+              footerfont: `${FONT_FAMILY} 20`,
+              infofont: `${FONT_FAMILY} 20`,
+            },
+          },
+        );
+        if (isCurrentRender) onTuneRendered?.(abcString, tunes[0] ?? null);
         const scoreSvg = scoreContainer.querySelector<SVGSVGElement>("svg");
         if (scoreSvg) {
           compactGraceNoteSpacing(scoreSvg);
@@ -60,6 +76,7 @@ function TuneViewer({ abcString }: TuneViewerProps): ReactElement {
         }
       } catch (error) {
         if (!isCurrentRender) return;
+        onTuneRendered?.(abcString, null);
         renderErrorElement.textContent = `Could not render the score: ${
           error instanceof Error
             ? error.message
@@ -74,7 +91,7 @@ function TuneViewer({ abcString }: TuneViewerProps): ReactElement {
     return () => {
       isCurrentRender = false;
     };
-  }, [abcString]);
+  }, [abcString, onTuneRendered]);
 
   return (
     <section className="preview-panel" aria-labelledby="preview-title">

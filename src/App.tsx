@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { ReactElement } from "react";
+import type { TuneObject } from "abcjs";
 import type { Tune } from "./data/initialTuneBook.js";
 import TuneAudio from "./components/TuneAudio.js";
 import TuneBookList from "./components/TuneBookList.js";
@@ -15,10 +16,23 @@ import "./App.css";
 function App(): ReactElement {
   const [tuneBook, setTuneBook] = useState<Tune[]>(INITIAL_TUNE_BOOK);
   const [activeTuneId, setActiveTuneId] = useState(INITIAL_ACTIVE_TUNE_ID);
+  const [renderedTune, setRenderedTune] = useState<{
+    abcString: string;
+    tune: TuneObject | null;
+  }>({ abcString: "", tune: null });
 
   const activeTune =
     tuneBook.find((tune) => tune.id === activeTuneId) ?? tuneBook[0];
   const abcString = activeTune?.abcString ?? "";
+  const activeVisualTune =
+    renderedTune.abcString === abcString ? renderedTune.tune : null;
+
+  const handleTuneRendered = useCallback(
+    (sourceAbcString: string, tune: TuneObject | null): void => {
+      setRenderedTune({ abcString: sourceAbcString, tune });
+    },
+    [],
+  );
 
   function updateActiveAbc(nextAbcString: string): void {
     if (!activeTune) return;
@@ -71,9 +85,12 @@ function App(): ReactElement {
               onAbcChange={updateActiveAbc}
               onClear={() => updateActiveAbc("")}
             />
-            <TuneAudio />
+            <TuneAudio abcString={abcString} tune={activeVisualTune} />
           </div>
-          <TuneViewer abcString={abcString} />
+          <TuneViewer
+            abcString={abcString}
+            onTuneRendered={handleTuneRendered}
+          />
         </div>
 
         <footer className="workspace-footer no-print">
