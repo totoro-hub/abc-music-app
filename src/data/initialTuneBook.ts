@@ -14,10 +14,10 @@ export const INITIAL_TUNE_BOOK: Tune[] = [
     type: "March",
     abcString: `X:1
 T:Scotland the Brave
-C: Traditional
-R: March
-M: 4/4
-K: HK
+C:Traditional
+R:March
+M:4/4
+K:Hp
 %%graceslurs 0
 %%bagpipes
  e [| {g}A2 {GdGe}A>B {gcd}c{e}A {gdc}ce | {ag}a2 {g}a2 {GdG}ae {gcd}c{e}A | {Gdc}d2 {g}f>d {gcd}c2 {gef}e>c | {gBd}B2 {gef}e2 {A}e>f {g}e>d{g}c>B |
@@ -31,10 +31,10 @@ K: HK
     type: "March",
     abcString: `X:1
 T:The Rowan Tree
-C: Traditional
+C:Traditional
 R:March
 M:4/4
-K:HK
+K:Hp
 %%graceslurs 0
 %%bagpipes
 {g}A>B [| {GdG}c2> {GdG}c2 {gcd}c2 {e}B2 | {g}c e2> {A}e4 a2 | {gfg}f2> e2 {g}f2 a2 | {gfg}f2 e {A}e2 {g}A>B |
